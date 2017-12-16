@@ -177,6 +177,9 @@ namespace AnalizatorSkladniowy
                 }
                 else
                 {
+                    if (!allTerminalSymbols.Contains(s.ElementAtOrDefault(0)))
+                        throw new ArgumentException("Invalid character");
+
                     break;
                 }
             }
