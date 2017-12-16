@@ -40,40 +40,47 @@ namespace AnalizatorSkladniowy
             { "<digit2>",  new[] {'0','1', '2','3', '4', '5','6','7','8','9' } },
 
         };
-        public Dictionary<string, IEnumerable<char>> terminalSymbols => this._terminalSymbols;
+        HashSet<char> allTerminalSymbols => new HashSet<char>(_terminalSymbols.Values.SelectMany(x => x));
+        public Dictionary<string, IEnumerable<char>> terminalSymbolsGroups => this._terminalSymbols;
 
         public bool IsValidExpression(string s)
         {
-            List<SubExpression> subExpressions = new List<SubExpression>();
-            if (s.ElementAtOrDefault(0) == '-')
+            try
             {
-                subExpressions.Add(SubExpression.Minus);
-                s = new string(s.Skip(1).ToArray());
+                List<SubExpression> subExpressions = new List<SubExpression>();
+                if (s.ElementAtOrDefault(0) == '-')
+                {
+                    subExpressions.Add(SubExpression.Minus);
+                    s = new string(s.Skip(1).ToArray());
+                }
+
+                s = IsNumber(s, subExpressions);
+
+
+
+                while (s.Length > 0)
+                {
+                    s = IsOperationNumberPair(s, subExpressions);
+                }
+
+                bool condtion1 =
+                        subExpressions.ElementAtOrDefault(0) == SubExpression.Number &&
+                        subExpressions.Where((_, index) => index > 0 && index < subExpressions.Count)
+                        .All(x => x == SubExpression.OperatorNumberPair);
+
+
+                bool condtion2 =
+                        subExpressions.ElementAtOrDefault(0) == SubExpression.Minus && subExpressions.ElementAtOrDefault(1) == SubExpression.Number &&
+                        subExpressions.Where((_, index) => index > 1 && index < subExpressions.Count)
+                        .All(x => x == SubExpression.OperatorNumberPair);
+
+
+                return condtion1 || condtion2;
             }
-
-            s = IsNumber(s, subExpressions);
-
-
-
-            while (s.Length > 0)
+            catch (ArgumentException)
             {
-                s = IsOperationNumberPair(s, subExpressions);
+                return false;
             }
-
-            bool condtion1 =
-                    subExpressions.ElementAtOrDefault(0) == SubExpression.Number &&
-                    subExpressions.Where((_, index) => index > 0 && index < subExpressions.Count)
-                    .All(x => x == SubExpression.OperatorNumberPair);
-
-
-            bool condtion2 =
-                    subExpressions.ElementAtOrDefault(0) == SubExpression.Minus && subExpressions.ElementAtOrDefault(1) == SubExpression.Number &&
-                    subExpressions.Where((_, index) => index > 1 && index < subExpressions.Count)
-                    .All(x => x == SubExpression.OperatorNumberPair);
-
-
-            return condtion1 || condtion2;
-
         }
 
         private string IsOperationNumberPair(string s, List<SubExpression> subExpressions)
@@ -87,6 +94,9 @@ namespace AnalizatorSkladniowy
             }
             else
             {
+                if (!allTerminalSymbols.Contains(s.ElementAtOrDefault(0)))
+                    throw new ArgumentException("Invalid character");
+
                 return String.Empty;
             }
 
@@ -111,10 +121,13 @@ namespace AnalizatorSkladniowy
             }
             else
             {
+                if (!allTerminalSymbols.Contains(s.ElementAtOrDefault(0)))
+                    throw new ArgumentException("Invalid character");
+
                 return String.Empty;
             }
 
-            for (int i = 0; i < s.Length; i++)
+            while (s.Length > 0)
             {
                 if (this._terminalSymbols["<digit2>"].Contains(s.ElementAtOrDefault(0)))
                 {
@@ -123,6 +136,9 @@ namespace AnalizatorSkladniowy
                 }
                 else
                 {
+                    if (!allTerminalSymbols.Contains(s.ElementAtOrDefault(0)))
+                        throw new ArgumentException("Invalid character");
+
                     break;
                 }
             }
@@ -146,6 +162,9 @@ namespace AnalizatorSkladniowy
             }
             else
             {
+                if (!allTerminalSymbols.Contains(s.ElementAtOrDefault(0)))
+                    throw new ArgumentException("Invalid character");
+
                 return String.Empty;
             }
 
